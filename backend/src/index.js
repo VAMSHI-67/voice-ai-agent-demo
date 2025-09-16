@@ -13,11 +13,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE_URL = process.env.ELEVENLABS_BASE_URL || 'https://api.elevenlabs.io/v1';
 
-app.use(cors({ origin: '*'}));
+app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
 
@@ -33,7 +33,7 @@ app.use('/audio', express.static(audioDir, {
 }));
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, env: process.env.NODE_ENV || 'dev' });
+  res.json({ status: 'ok', message: 'Backend running' });
 });
 
 // GET /voices - Fetch available voices from ElevenLabs
@@ -174,5 +174,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend listening on port ${PORT}`);
+  console.log(`✅ Backend listening on port ${PORT}`);
 });
