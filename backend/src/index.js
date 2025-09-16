@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend running' });
+  res.json({ status: 'ok', message: 'Backend running', elevenlabsKeyConfigured: !!ELEVENLABS_API_KEY });
 });
 
 // GET /voices - Fetch available voices from ElevenLabs
@@ -92,7 +92,17 @@ app.post('/generate-voice', async (req, res, next) => {
     } catch (err) {
       // Surface ElevenLabs error details to the client for easier debugging
       const status = err.response?.status || 500;
-      const details = err.response?.data || err.message || 'Unknown error';
+      let details = err.response?.data || err.message || 'Unknown error';
+      // Attempt to decode JSON error if we requested arraybuffer
+      try {
+        const ct = err.response?.headers?.['content-type'] || '';
+        if (ct.includes('application/json') && details instanceof ArrayBuffer) {
+          const text = Buffer.from(details).toString('utf8');
+          details = JSON.parse(text);
+        } else if (details instanceof ArrayBuffer) {
+          details = Buffer.from(details).toString('utf8');
+        }
+      } catch {}
       console.error('ElevenLabs TTS error:', status, details);
       return res.status(status).json({ error: 'ElevenLabs TTS error', details });
     }
@@ -137,7 +147,16 @@ app.post('/generate-call', async (req, res, next) => {
       );
     } catch (err) {
       const status = err.response?.status || 500;
-      const details = err.response?.data || err.message || 'Unknown error';
+      let details = err.response?.data || err.message || 'Unknown error';
+      try {
+        const ct = err.response?.headers?.['content-type'] || '';
+        if (ct.includes('application/json') && details instanceof ArrayBuffer) {
+          const text = Buffer.from(details).toString('utf8');
+          details = JSON.parse(text);
+        } else if (details instanceof ArrayBuffer) {
+          details = Buffer.from(details).toString('utf8');
+        }
+      } catch {}
       console.error('ElevenLabs TTS error (/generate-call):', status, details);
       return res.status(status).json({ error: 'ElevenLabs TTS error', details });
     }
