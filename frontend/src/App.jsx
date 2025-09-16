@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import ErrorToast from './components/ErrorToast.jsx'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 function useApi() {
-  const api = useMemo(() => axios.create({ baseURL: API_BASE, timeout: 30000 }), [])
+  const api = useMemo(() => axios.create({ baseURL: BACKEND_URL, timeout: 30000 }), [])
   return api
 }
 
@@ -57,7 +57,7 @@ export default function App() {
       setAudioUrl(aUrl)
       if (useSSE) {
         // Live updates via SSE
-        const url = new URL('/simulate-call-sse', API_BASE)
+  const url = new URL('/simulate-call-sse', BACKEND_URL)
         url.searchParams.set('audioUrl', aUrl)
         url.searchParams.set('toNumber', 'local-sim')
         let es
@@ -70,7 +70,7 @@ export default function App() {
           return
         }
         const audioEl = audioRef.current
-        const absoluteAudioUrl = aUrl.startsWith('http') ? aUrl : `${API_BASE}${aUrl}`
+  const absoluteAudioUrl = aUrl.startsWith('http') ? aUrl : `${BACKEND_URL}${aUrl}`
 
         const handlers = {
           initiated: () => setStatus('ringing'),
@@ -111,7 +111,7 @@ export default function App() {
         const duration = sim.data.duration
         setStatus('playing')
 
-        const absoluteAudioUrl = aUrl.startsWith('http') ? aUrl : `${API_BASE}${aUrl}`
+  const absoluteAudioUrl = aUrl.startsWith('http') ? aUrl : `${BACKEND_URL}${aUrl}`
         const audioEl = audioRef.current
         audioEl.src = absoluteAudioUrl
         try { await audioEl.play() } catch (e) { console.error(e) }
@@ -144,7 +144,7 @@ export default function App() {
         aUrl = r.data.audioUrl
         setAudioUrl(aUrl)
       }
-      const absoluteAudioUrl = aUrl.startsWith('http') ? aUrl : `${API_BASE}${aUrl}`
+  const absoluteAudioUrl = aUrl.startsWith('http') ? aUrl : `${BACKEND_URL}${aUrl}`
       const audioEl = audioRef.current
       audioEl.src = absoluteAudioUrl
       try { await audioEl.play() } catch (e) { console.error(e) }
@@ -244,7 +244,7 @@ export default function App() {
       </section>
 
       <footer className="mt-8 text-xs text-gray-500">
-        <p>Backend: {API_BASE}</p>
+        <p>Backend: {BACKEND_URL}</p>
       </footer>
     </div>
   )
