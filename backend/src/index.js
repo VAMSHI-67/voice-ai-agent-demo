@@ -32,6 +32,13 @@ app.use('/audio', express.static(audioDir, {
   }
 }));
 
+// Root confirmation route and favicon handler to reduce 404 noise
+app.get('/', (req, res) => {
+  res.send('Voice AI Agent Backend is running!');
+});
+
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend running' });
 });
@@ -66,6 +73,43 @@ app.post('/generate-voice', async (req, res, next) => {
     }
 
     // ElevenLabs text-to-speech endpoint
+    const url = `${ELEVENLABS_BASE_URL}/text-to-speech/${voiceId}`;
+    const r = await axios.post(
+      url,
+      { text },
+      {
+        responseType: 'arraybuffer',
+        headers: {
+          'xi-api-key': ELEVENLABS_API_KEY,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg',
+        },
+      }
+    );
+
+    const id = uuidv4();
+    const filename = `${id}.mp3`;
+    const filepath = path.join(audioDir, filename);
+    fs.writeFileSync(filepath, r.data);
+
+    const audioUrl = `/audio/${filename}`;
+    res.json({ audioUrl });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Backward-compatible alias: POST /generate-call behaves like /generate-voice
+app.post('/generate-call', async (req, res, next) => {
+  try {
+    const { text, voiceId } = req.body || {};
+    if (!text || !voiceId) {
+      return res.status(400).json({ error: 'Missing text or voiceId' });
+    }
+    if (!ELEVENLABS_API_KEY) {
+      return res.status(500).json({ error: 'Missing ELEVENLABS_API_KEY' });
+    }
+
     const url = `${ELEVENLABS_BASE_URL}/text-to-speech/${voiceId}`;
     const r = await axios.post(
       url,
