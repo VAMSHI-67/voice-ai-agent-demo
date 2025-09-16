@@ -45,6 +45,7 @@ A free-tier demo that converts text to AI voice with ElevenLabs and simulates a 
   - Build Command: `npm install`
   - Start Command: `npm start`
   - Env Vars: `ELEVENLABS_API_KEY`, optional `PORT`, `ELEVENLABS_BASE_URL`, `ELEVENLABS_MODEL_ID` (defaults to `eleven_multilingual_v2`).
+  - Optional fallback: set `ENABLE_DEMO_TTS_FALLBACK=true` to auto-generate a short offline WAV tone if ElevenLabs rejects requests (401/403/429 or "Unusual activity"). Useful for demos when Free Tier is restricted.
 - Frontend on Vercel:
   - Import repo, set Framework to Vite.
   - Add env `VITE_BACKEND_URL` pointing to your Render URL.
@@ -53,6 +54,7 @@ A free-tier demo that converts text to AI voice with ElevenLabs and simulates a 
 - No real telephony—call is simulated; audio plays in-browser.
 - Free tiers (rate limits, character limits) apply.
  - SSE uses a single HTTP connection; some corporate networks or certain browsers may interfere.
+ - If ElevenLabs TTS is unavailable (e.g., free tier disabled), enabling `ENABLE_DEMO_TTS_FALLBACK` will generate a short tone instead of real speech so the flow still works for demos.
 
 ## Screenshots / Demo
 - Add screenshots of Home and Call Simulation screens.

@@ -17,6 +17,7 @@ const PORT = process.env.PORT || 10000;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE_URL = process.env.ELEVENLABS_BASE_URL || 'https://api.elevenlabs.io/v1';
 const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
+const ENABLE_DEMO_TTS_FALLBACK = String(process.env.ENABLE_DEMO_TTS_FALLBACK || '').toLowerCase() === 'true';
 
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: '1mb' }));
@@ -43,6 +44,50 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend running', elevenlabsKeyConfigured: !!ELEVENLABS_API_KEY });
 });
+
+// --- Utility: generate a simple WAV beep (mono, 44.1kHz, 16-bit PCM) for demo fallback ---
+function generateBeepWavFile(dir, seconds = 2, freq = 440) {
+  const sampleRate = 44100;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const totalSamples = Math.max(1, Math.floor(seconds * sampleRate));
+  const amplitude = 0.25 * 0x7FFF; // 25% of max to avoid clipping
+
+  // PCM data
+  const dataBuffer = Buffer.alloc(totalSamples * 2); // 16-bit mono
+  for (let i = 0; i < totalSamples; i++) {
+    const t = i / sampleRate;
+    const sample = Math.sin(2 * Math.PI * freq * t);
+    const val = Math.max(-1, Math.min(1, sample)) * amplitude;
+    dataBuffer.writeInt16LE(val, i * 2);
+  }
+
+  const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
+  const blockAlign = numChannels * (bitsPerSample / 8);
+  const dataSize = dataBuffer.length;
+  const fileSize = 44 + dataSize - 8;
+
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0);
+  header.writeUInt32LE(fileSize, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16); // PCM chunk size
+  header.writeUInt16LE(1, 20); // PCM format
+  header.writeUInt16LE(numChannels, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(bitsPerSample, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(dataSize, 40);
+
+  const id = uuidv4();
+  const filename = `${id}.wav`;
+  const filepath = path.join(dir, filename);
+  fs.writeFileSync(filepath, Buffer.concat([header, dataBuffer]));
+  return { filename, filepath };
+}
 
 // GET /voices - Fetch available voices from ElevenLabs
 app.get('/voices', async (req, res, next) => {
@@ -118,6 +163,16 @@ app.post('/generate-voice', async (req, res, next) => {
         }
       } catch {}
       console.error('ElevenLabs TTS error:', status, message || details);
+      const triggerFallback = ENABLE_DEMO_TTS_FALLBACK ||
+        status === 401 || status === 403 || status === 429 ||
+        (typeof message === 'string' && message.toLowerCase().includes('unusual activity'));
+      if (triggerFallback) {
+        // Generate a short beep WAV as demo fallback
+        const sec = Math.min(6, Math.max(2, Math.ceil((req.body?.text?.length || 60) / 30))); // 2-6s
+        const { filename } = generateBeepWavFile(audioDir, sec);
+        const audioUrl = `/audio/${filename}`;
+        return res.json({ audioUrl, fallback: true, note: 'Using offline demo audio due to TTS restriction' });
+      }
       return res.status(status).json({ error: 'ElevenLabs TTS error', status, message: message || undefined, details });
     }
 
@@ -185,6 +240,15 @@ app.post('/generate-call', async (req, res, next) => {
         }
       } catch {}
       console.error('ElevenLabs TTS error (/generate-call):', status, message || details);
+      const triggerFallback = ENABLE_DEMO_TTS_FALLBACK ||
+        status === 401 || status === 403 || status === 429 ||
+        (typeof message === 'string' && message.toLowerCase().includes('unusual activity'));
+      if (triggerFallback) {
+        const sec = Math.min(6, Math.max(2, Math.ceil((req.body?.text?.length || 60) / 30))); // 2-6s
+        const { filename } = generateBeepWavFile(audioDir, sec);
+        const audioUrl = `/audio/${filename}`;
+        return res.json({ audioUrl, fallback: true, note: 'Using offline demo audio due to TTS restriction' });
+      }
       return res.status(status).json({ error: 'ElevenLabs TTS error', status, message: message || undefined, details });
     }
 
