@@ -165,9 +165,16 @@ export default function App() {
     setStatus('ended')
   }
 
+  const isProdButLocalBackend = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && BACKEND_URL.startsWith('http://localhost')
+
   return (
     <div className="min-h-screen p-6 max-w-3xl mx-auto">
       <ErrorToast message={error} onClose={() => setError('')} />
+      {isProdButLocalBackend && (
+        <div className="mb-4 bg-yellow-100 border border-yellow-300 text-yellow-900 px-4 py-2 rounded">
+          The app is deployed but BACKEND_URL points to localhost. Set VITE_BACKEND_URL on Vercel to your Render URL and redeploy.
+        </div>
+      )}
       <header className="mb-6">
         <h1 className="text-2xl font-bold">Voice over AI Agent (Demo)</h1>
         <p className="text-sm text-gray-600">Free-tier simulation using ElevenLabs + web playback</p>
