@@ -16,6 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ELEVENLABS_BASE_URL = process.env.ELEVENLABS_BASE_URL || 'https://api.elevenlabs.io/v1';
+const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID || 'eleven_multilingual_v2';
 
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: '1mb' }));
@@ -64,7 +65,7 @@ app.get('/voices', async (req, res, next) => {
 // POST /generate-voice { text, voiceId }
 app.post('/generate-voice', async (req, res, next) => {
   try {
-    const { text, voiceId } = req.body || {};
+    const { text, voiceId, modelId } = req.body || {};
     if (!text || !voiceId) {
       return res.status(400).json({ error: 'Missing text or voiceId' });
     }
@@ -74,18 +75,27 @@ app.post('/generate-voice', async (req, res, next) => {
 
     // ElevenLabs text-to-speech endpoint
     const url = `${ELEVENLABS_BASE_URL}/text-to-speech/${voiceId}`;
-    const r = await axios.post(
-      url,
-      { text },
-      {
-        responseType: 'arraybuffer',
-        headers: {
-          'xi-api-key': ELEVENLABS_API_KEY,
-          'Content-Type': 'application/json',
-          'Accept': 'audio/mpeg',
-        },
-      }
-    );
+    let r;
+    try {
+      r = await axios.post(
+        url,
+        { text, model_id: modelId || ELEVENLABS_MODEL_ID },
+        {
+          responseType: 'arraybuffer',
+          headers: {
+            'xi-api-key': ELEVENLABS_API_KEY,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg',
+          },
+        }
+      );
+    } catch (err) {
+      // Surface ElevenLabs error details to the client for easier debugging
+      const status = err.response?.status || 500;
+      const details = err.response?.data || err.message || 'Unknown error';
+      console.error('ElevenLabs TTS error:', status, details);
+      return res.status(status).json({ error: 'ElevenLabs TTS error', details });
+    }
 
     const id = uuidv4();
     const filename = `${id}.mp3`;
@@ -102,7 +112,7 @@ app.post('/generate-voice', async (req, res, next) => {
 // Backward-compatible alias: POST /generate-call behaves like /generate-voice
 app.post('/generate-call', async (req, res, next) => {
   try {
-    const { text, voiceId } = req.body || {};
+    const { text, voiceId, modelId } = req.body || {};
     if (!text || !voiceId) {
       return res.status(400).json({ error: 'Missing text or voiceId' });
     }
@@ -111,18 +121,26 @@ app.post('/generate-call', async (req, res, next) => {
     }
 
     const url = `${ELEVENLABS_BASE_URL}/text-to-speech/${voiceId}`;
-    const r = await axios.post(
-      url,
-      { text },
-      {
-        responseType: 'arraybuffer',
-        headers: {
-          'xi-api-key': ELEVENLABS_API_KEY,
-          'Content-Type': 'application/json',
-          'Accept': 'audio/mpeg',
-        },
-      }
-    );
+    let r;
+    try {
+      r = await axios.post(
+        url,
+        { text, model_id: modelId || ELEVENLABS_MODEL_ID },
+        {
+          responseType: 'arraybuffer',
+          headers: {
+            'xi-api-key': ELEVENLABS_API_KEY,
+            'Content-Type': 'application/json',
+            'Accept': 'audio/mpeg',
+          },
+        }
+      );
+    } catch (err) {
+      const status = err.response?.status || 500;
+      const details = err.response?.data || err.message || 'Unknown error';
+      console.error('ElevenLabs TTS error (/generate-call):', status, details);
+      return res.status(status).json({ error: 'ElevenLabs TTS error', details });
+    }
 
     const id = uuidv4();
     const filename = `${id}.mp3`;

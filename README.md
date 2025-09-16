@@ -22,7 +22,7 @@ A free-tier demo that converts text to AI voice with ElevenLabs and simulates a 
    - Backend runs on http://localhost:3001
 
 2. Frontend
-   - Copy `frontend/.env.example` to `frontend/.env` and set `VITE_API_BASE_URL=http://localhost:3001`.
+  - Copy `frontend/.env.example` to `frontend/.env` and set `VITE_BACKEND_URL=http://localhost:3001`.
    - Install deps and run:
 
    ```powershell
@@ -44,10 +44,10 @@ A free-tier demo that converts text to AI voice with ElevenLabs and simulates a 
   - Create a new Web Service from your GitHub repo, root set to `backend`.
   - Build Command: `npm install`
   - Start Command: `npm start`
-  - Env Vars: `ELEVENLABS_API_KEY`, optional `PORT`, `ELEVENLABS_BASE_URL`.
+  - Env Vars: `ELEVENLABS_API_KEY`, optional `PORT`, `ELEVENLABS_BASE_URL`, `ELEVENLABS_MODEL_ID` (defaults to `eleven_multilingual_v2`).
 - Frontend on Vercel:
   - Import repo, set Framework to Vite.
-  - Add env `VITE_API_BASE_URL` pointing to your Render URL.
+  - Add env `VITE_BACKEND_URL` pointing to your Render URL.
 
 ## Limitations
 - No real telephony—call is simulated; audio plays in-browser.

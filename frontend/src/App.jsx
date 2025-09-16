@@ -50,7 +50,9 @@ export default function App() {
       } catch (e) {
         console.error(e)
         setStatus('idle')
-        setError('Voice generation failed. Please retry.')
+        const msg = e.response?.data?.error || e.message || 'Voice generation failed. Please retry.'
+        const details = e.response?.data?.details
+        setError(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg)
         return
       }
       const aUrl = r.data.audioUrl
@@ -138,7 +140,9 @@ export default function App() {
           r = await api.post('/generate-voice', { text, voiceId })
         } catch (e) {
           console.error(e)
-          setError('Voice generation failed. Please retry.')
+          const msg = e.response?.data?.error || e.message || 'Voice generation failed. Please retry.'
+          const details = e.response?.data?.details
+          setError(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg)
           return
         }
         aUrl = r.data.audioUrl
