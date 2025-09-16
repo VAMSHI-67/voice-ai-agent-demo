@@ -1,0 +1,53 @@
+# --- Node/Frontend ---
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+.vite/
+coverage/
+
+# Next.js / Nuxt / Remix (future-proof)
+.next/
+.nuxt/
+.svelte-kit/
+out/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+report.*.json
+
+# Env files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Editors/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Storybook / tools (optional)
+storybook-static/
+.turbo/
+
+# Backend generated assets
+backend/public/audio/*.mp3
+backend/public/audio/*.wav
