@@ -50,8 +50,9 @@ export default function App() {
       } catch (e) {
         console.error(e)
         setStatus('idle')
-        const msg = e.response?.data?.error || e.message || 'Voice generation failed. Please retry.'
-        const details = e.response?.data?.details
+        const data = e.response?.data
+        const msg = data?.message || data?.error || e.message || 'Voice generation failed. Please retry.'
+        const details = data?.details
         setError(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg)
         return
       }
@@ -140,8 +141,9 @@ export default function App() {
           r = await api.post('/generate-voice', { text, voiceId })
         } catch (e) {
           console.error(e)
-          const msg = e.response?.data?.error || e.message || 'Voice generation failed. Please retry.'
-          const details = e.response?.data?.details
+          const data = e.response?.data
+          const msg = data?.message || data?.error || e.message || 'Voice generation failed. Please retry.'
+          const details = data?.details
           setError(details ? `${msg}: ${typeof details === 'string' ? details : JSON.stringify(details)}` : msg)
           return
         }

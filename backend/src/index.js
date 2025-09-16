@@ -93,18 +93,32 @@ app.post('/generate-voice', async (req, res, next) => {
       // Surface ElevenLabs error details to the client for easier debugging
       const status = err.response?.status || 500;
       let details = err.response?.data || err.message || 'Unknown error';
-      // Attempt to decode JSON error if we requested arraybuffer
+      let message;
+      // Attempt to decode JSON/text error if we requested arraybuffer (Node returns Buffer)
       try {
-        const ct = err.response?.headers?.['content-type'] || '';
-        if (ct.includes('application/json') && details instanceof ArrayBuffer) {
-          const text = Buffer.from(details).toString('utf8');
-          details = JSON.parse(text);
-        } else if (details instanceof ArrayBuffer) {
-          details = Buffer.from(details).toString('utf8');
+        const ct = (err.response?.headers?.['content-type'] || '').toLowerCase();
+        if (ct.includes('application/json')) {
+          if (Buffer.isBuffer(details)) {
+            const text = details.toString('utf8');
+            details = JSON.parse(text);
+          } else if (details instanceof ArrayBuffer) {
+            const text = Buffer.from(details).toString('utf8');
+            details = JSON.parse(text);
+          } else if (typeof details === 'string') {
+            details = JSON.parse(details);
+          }
+        } else if (Buffer.isBuffer(details)) {
+          details = details.toString('utf8');
+        }
+        // Common ElevenLabs format uses { detail: { status, message } }
+        if (details && typeof details === 'object') {
+          message = details.detail?.message || details.message;
+        } else if (typeof details === 'string') {
+          message = details;
         }
       } catch {}
-      console.error('ElevenLabs TTS error:', status, details);
-      return res.status(status).json({ error: 'ElevenLabs TTS error', details });
+      console.error('ElevenLabs TTS error:', status, message || details);
+      return res.status(status).json({ error: 'ElevenLabs TTS error', status, message: message || undefined, details });
     }
 
     const id = uuidv4();
@@ -148,17 +162,30 @@ app.post('/generate-call', async (req, res, next) => {
     } catch (err) {
       const status = err.response?.status || 500;
       let details = err.response?.data || err.message || 'Unknown error';
+      let message;
       try {
-        const ct = err.response?.headers?.['content-type'] || '';
-        if (ct.includes('application/json') && details instanceof ArrayBuffer) {
-          const text = Buffer.from(details).toString('utf8');
-          details = JSON.parse(text);
-        } else if (details instanceof ArrayBuffer) {
-          details = Buffer.from(details).toString('utf8');
+        const ct = (err.response?.headers?.['content-type'] || '').toLowerCase();
+        if (ct.includes('application/json')) {
+          if (Buffer.isBuffer(details)) {
+            const text = details.toString('utf8');
+            details = JSON.parse(text);
+          } else if (details instanceof ArrayBuffer) {
+            const text = Buffer.from(details).toString('utf8');
+            details = JSON.parse(text);
+          } else if (typeof details === 'string') {
+            details = JSON.parse(details);
+          }
+        } else if (Buffer.isBuffer(details)) {
+          details = details.toString('utf8');
+        }
+        if (details && typeof details === 'object') {
+          message = details.detail?.message || details.message;
+        } else if (typeof details === 'string') {
+          message = details;
         }
       } catch {}
-      console.error('ElevenLabs TTS error (/generate-call):', status, details);
-      return res.status(status).json({ error: 'ElevenLabs TTS error', details });
+      console.error('ElevenLabs TTS error (/generate-call):', status, message || details);
+      return res.status(status).json({ error: 'ElevenLabs TTS error', status, message: message || undefined, details });
     }
 
     const id = uuidv4();
